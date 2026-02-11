@@ -76,6 +76,10 @@
           update = pkgs.mkShell {
             packages = with pkgs; [
               renovate
+
+              # uv version
+              python314
+              uv
             ];
           };
 

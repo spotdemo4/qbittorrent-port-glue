@@ -1,0 +1,23 @@
+{
+  "editor.formatOnSave": true,
+  "files.associations": {
+    "renovate.json": "jsonc",
+    ".envrc.project": "dotenv",
+    ".envrc": "dotenv"
+  },
+
+  // python
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  },
+
+  // nix
+  "nix.enableLanguageServer": true,
+  "nix.serverPath": "nixd",
+  "[nix]": {
+    "editor.defaultFormatter": "jnoortheen.nix-ide"
+  },
+
+  // actions
+  "editor.defaultFormatter": "esbenp.prettier-vscode"
+}

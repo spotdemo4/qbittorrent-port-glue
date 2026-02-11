@@ -1,0 +1,20 @@
+[project]
+name = "qbittorrent-port-glue"
+version = "0.0.1"
+description = "glues qbittorrent's port to a file"
+readme = ".github/README.md"
+authors = [
+    { name = "spotdemo4", email = "me@trev.xyz" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "qbittorrent-api>=2025.11.1",
+    "watchfiles>=1.1.1",
+]
+
+[project.scripts]
+qbittorrent-port-glue = "qbittorrent_port_glue:main"
+
+[build-system]
+requires = ["uv_build>=0.9.9,<0.10.0"]
+build-backend = "uv_build"

@@ -1,15 +1,19 @@
 from .qbittorrent import qBittorrent, ConnectionStatus
 from os import environ
 from watchfiles import watch, Change
+import logging
 import signal
 import threading
 
+logging.basicConfig(level=environ.get("LOGLEVEL", "INFO").upper())
 done_event = threading.Event()
 
 
 # watch port file for changes
 def watch_file(qb: qBittorrent, done_event: threading.Event) -> None:
     for changes in watch(environ.get("PORT_FILE"), stop_event=done_event):
+        logging.debug("File changed")
+
         # skip checking if connected
         qb_connected = qb.get_connection_status()
         if qb_connected == ConnectionStatus.CONNECTED:
@@ -20,7 +24,7 @@ def watch_file(qb: qBittorrent, done_event: threading.Event) -> None:
 
             # ignore deleted file, wait for next change
             if change_type == Change.deleted:
-                print("Port file deleted!")
+                logging.warning("Port file deleted!")
                 continue
 
             # get port from file
@@ -32,13 +36,15 @@ def watch_file(qb: qBittorrent, done_event: threading.Event) -> None:
 
             # update qBittorrent if different
             if qb_port != port:
-                print(f"Updating port ({qb_port} -> {port})")
+                logging.info(f"Updating port ({qb_port} -> {port})")
                 qb.set_port(port)
 
 
 # periodically check file for changes
 def timer_qbit(qb: qBittorrent, done_event: threading.Event) -> None:
     while not done_event.is_set():
+        logging.debug("Checking qBittorrent connection")
+
         # skip checking if connected
         qb_connected = qb.get_connection_status()
         if qb_connected == ConnectionStatus.CONNECTED:
@@ -54,7 +60,7 @@ def timer_qbit(qb: qBittorrent, done_event: threading.Event) -> None:
 
         # update qBittorrent if different
         if qb_port != port:
-            print(f"Updating port ({qb_port} -> {port})")
+            logging.info(f"Updating port ({qb_port} -> {port})")
             qb.set_port(port)
 
         done_event.wait(timeout=30)
@@ -81,7 +87,7 @@ def main() -> None:
     )
 
     def signal_handler(signum, frame):
-        print("Signal received, shutting down...")
+        logging.info("Signal received, shutting down...")
         done_event.set()
 
     signal.signal(signal.SIGINT, signal_handler)

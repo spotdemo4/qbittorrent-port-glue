@@ -1,6 +1,7 @@
 from enum import Enum
 from os import environ
 from qbittorrentapi import Client
+import logging
 
 
 class ConnectionStatus(Enum):
@@ -18,7 +19,7 @@ class qBittorrent:
             password=environ.get("QBITTORRENT_PASS"),
         )
         self._client = Client(**conn_info)
-        print("Connected to qBittorrent")
+        logging.info("Connected to qBittorrent")
 
     def get_port(self) -> int:
         return self._client.app.preferences.listen_port

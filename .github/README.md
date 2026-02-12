@@ -12,7 +12,7 @@ glues qbittorrent's port to a file
 ### docker
 
 ```elm
-docker run ghcr.io/spotdemo4/qbittorrent-port-glue:0.0.1
+docker run ghcr.io/spotdemo4/qbittorrent-port-glue:0.0.2
 ```
 
 ### nix

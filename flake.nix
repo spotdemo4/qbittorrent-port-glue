@@ -198,9 +198,9 @@
               watchfiles
             ];
 
-            build-system = with pkgs.python314Packages; [
-              setuptools
-              uv-build
+            build-system = [
+              pkgs.python314Packages.setuptools
+              pkgs.uv-build.python314
             ];
 
             meta = {

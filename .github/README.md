@@ -9,7 +9,7 @@ keeps qbittorrent's listening port synced with a port from a file
 
 ## use
 
-### Environment
+### environment
 
 | Variable         | Description                  | Example                           |
 | ---------------- | ---------------------------- | --------------------------------- |

@@ -38,7 +38,7 @@
         };
         fs = pkgs.lib.fileset;
       in
-      {
+      rec {
         devShells = {
           default = pkgs.mkShell {
             shellHook = pkgs.shellhook.ref;
@@ -235,6 +235,10 @@
               };
             };
           };
+        };
+
+        nixosModules.default = import ./service.nix {
+          qbittorrent-port-glue = packages.default;
         };
 
         formatter = pkgs.nixfmt-tree;

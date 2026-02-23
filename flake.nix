@@ -178,7 +178,7 @@
         packages = with pkgs.lib; rec {
           default = pkgs.python314Packages.buildPythonPackage (finalAttrs: {
             pname = "qbittorrent-port-glue";
-            version = "0.1.0";
+            version = "0.1.1";
             pyproject = true;
 
             src = fs.toSource {

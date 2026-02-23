@@ -30,7 +30,7 @@ docker run \
     -e QBITTORRENT_PASS=example \
     -e PORT_FILE=/tmp/port.txt \
     -v "/tmp/port.txt:/tmp/port.txt" \
-    ghcr.io/spotdemo4/qbittorrent-port-glue:0.1.0
+    ghcr.io/spotdemo4/qbittorrent-port-glue:0.1.1
 ```
 
 #### docker-compose.yaml
@@ -47,7 +47,7 @@ services:
       - PORT_FILE=/tmp/port.txt
     volumes:
       - /tmp/port.txt:/tmp/port.txt
-    image: ghcr.io/spotdemo4/qbittorrent-port-glue:0.1.0
+    image: ghcr.io/spotdemo4/qbittorrent-port-glue:0.1.1
 ```
 
 ### nix

@@ -18,7 +18,7 @@ keeps qbittorrent's listening port synced with a port from a file
 | QBITTORRENT_USER | qBittorrent WebUI Username   | `admin`                           |
 | QBITTORRENT_PASS | qBittorrent WebUI Password   | `example`                         |
 | PORT_FILE        | Path to file containing port | `/tmp/port.txt`                   |
-| LOG_LEVEL        | Verbosity of logs            | INFO                              |
+| LOG_LEVEL        | Verbosity of logs            | `INFO`                            |
 
 ### docker
 

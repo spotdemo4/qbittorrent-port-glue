@@ -55,3 +55,9 @@ services:
 ```elm
 nix run github:spotdemo4/qbittorrent-port-glue
 ```
+
+### uv
+
+```elm
+uvx git+https://github.com/spotdemo4/qbittorrent-port-glue
+```

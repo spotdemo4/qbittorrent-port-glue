@@ -9,6 +9,11 @@ keeps qbittorrent's listening port synced with a port from a file
 
 ## use
 
+```console
+$ PORT_FILE=/tmp/port.txt ./qbittorrent-port-glue
+2026-02-23 15:44:12,592 - INFO - Watching file /tmp/port.txt for changes
+```
+
 ### environment
 
 | Variable         | Description                  | Example                           |

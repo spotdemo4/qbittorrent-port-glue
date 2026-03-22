@@ -2,11 +2,11 @@
   "nodes": {
     "nixpkgs": {
       "locked": {
-        "lastModified": 1771207753,
-        "narHash": "sha256-b9uG8yN50DRQ6A7JdZBfzq718ryYrlmGgqkRm9OOwCE=",
+        "lastModified": 1773840656,
+        "narHash": "sha256-9tpvMGFteZnd3gRQZFlRCohVpqooygFuy9yjuyRL2C0=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "d1c15b7d5806069da59e819999d70e1cec0760bf",
+        "rev": "9cf7092bdd603554bd8b63c216e8943cf9b12512",
         "type": "github"
       },
       "original": {
@@ -21,6 +21,21 @@
         "nixpkgs": "nixpkgs",
         "systems": "systems",
         "trev": "trev"
+      }
+    },
+    "schema": {
+      "locked": {
+        "lastModified": 1773072327,
+        "narHash": "sha256-jffaEGY9Tt0IgiI1qHd/cXLeTMftOqpI/gtkS/J+Xg0=",
+        "owner": "DeterminateSystems",
+        "repo": "flake-schemas",
+        "rev": "834aaadfc96174a3abd124cf3c9a7373c26d12ad",
+        "type": "github"
+      },
+      "original": {
+        "owner": "DeterminateSystems",
+        "repo": "flake-schemas",
+        "type": "github"
       }
     },
     "systems": {
@@ -43,16 +58,17 @@
         "nixpkgs": [
           "nixpkgs"
         ],
+        "schema": "schema",
         "systems": [
           "systems"
         ]
       },
       "locked": {
-        "lastModified": 1771666345,
-        "narHash": "sha256-JZYhM5LrEcQ+WH0J3wBmLUrzAhBJZWGv4nTwwjHPbwo=",
+        "lastModified": 1774085502,
+        "narHash": "sha256-S2+yHMil2k7JEMatKWkQfy6VdA8GYGkvzvs3aU5L0Mw=",
         "owner": "spotdemo4",
         "repo": "nur",
-        "rev": "ce0b57d1a85585f516244eaea59ce11b27b28371",
+        "rev": "2354f637c065c4074cbd12a427c8a03639426285",
         "type": "github"
       },
       "original": {

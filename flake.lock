@@ -2,11 +2,11 @@
   "nodes": {
     "nixpkgs": {
       "locked": {
-        "lastModified": 1771207753,
-        "narHash": "sha256-b9uG8yN50DRQ6A7JdZBfzq718ryYrlmGgqkRm9OOwCE=",
+        "lastModified": 1775525641,
+        "narHash": "sha256-rM50ZJFuc9ePeWX7mgkX3jyqIlJoAdhyGsz5d2xhaTk=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "d1c15b7d5806069da59e819999d70e1cec0760bf",
+        "rev": "dc72a9d2282085d97d5a2cc8e7103a68ed4de188",
         "type": "github"
       },
       "original": {
@@ -23,18 +23,33 @@
         "trev": "trev"
       }
     },
-    "systems": {
+    "schema": {
       "locked": {
-        "lastModified": 1681028828,
-        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
-        "owner": "nix-systems",
-        "repo": "default",
-        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "lastModified": 1773853635,
+        "narHash": "sha256-4VHWij4EWNqy1iZr6OxNB6cuv5tDjMwAL/J1SBLFU2Q=",
+        "owner": "DeterminateSystems",
+        "repo": "flake-schemas",
+        "rev": "19686d6f3da8d4db959523f32eb1b50de9f18301",
         "type": "github"
       },
       "original": {
-        "owner": "nix-systems",
-        "repo": "default",
+        "owner": "DeterminateSystems",
+        "repo": "flake-schemas",
+        "type": "github"
+      }
+    },
+    "systems": {
+      "locked": {
+        "lastModified": 1774907047,
+        "narHash": "sha256-dhGYA99iXafW9QblBWbh5mggjbdJt0SZO8vzuL0XvKo=",
+        "owner": "spotdemo4",
+        "repo": "systems",
+        "rev": "7759b373a7b0119835939988964a9b49bc3023af",
+        "type": "github"
+      },
+      "original": {
+        "owner": "spotdemo4",
+        "repo": "systems",
         "type": "github"
       }
     },
@@ -43,16 +58,17 @@
         "nixpkgs": [
           "nixpkgs"
         ],
+        "schema": "schema",
         "systems": [
           "systems"
         ]
       },
       "locked": {
-        "lastModified": 1771666345,
-        "narHash": "sha256-JZYhM5LrEcQ+WH0J3wBmLUrzAhBJZWGv4nTwwjHPbwo=",
+        "lastModified": 1775389363,
+        "narHash": "sha256-auxi891YZAqobkcgnIx8xXGx4WgXhZQcgLoSjj3YG/8=",
         "owner": "spotdemo4",
         "repo": "nur",
-        "rev": "ce0b57d1a85585f516244eaea59ce11b27b28371",
+        "rev": "7a1bb5742d53cafd0d878cd2d4f5f57f7c8ece9d",
         "type": "github"
       },
       "original": {

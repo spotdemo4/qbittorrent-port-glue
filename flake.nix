@@ -11,7 +11,7 @@
   };
 
   inputs = {
-    systems.url = "github:nix-systems/default";
+    systems.url = "github:spotdemo4/systems";
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     trev = {
       url = "github:spotdemo4/nur";
@@ -22,23 +22,16 @@
 
   outputs =
     {
-      nixpkgs,
+      self,
       trev,
       ...
     }:
     trev.libs.mkFlake (
-      system:
+      system: init:
       let
-        pkgs = import nixpkgs {
-          inherit system;
-          overlays = [
-            trev.overlays.packages
-            trev.overlays.libs
-          ];
-        };
-        fs = pkgs.lib.fileset;
+        pkgs = init.appendOverlays [ trev.overlays.python ];
       in
-      rec {
+      {
         devShells = {
           default = pkgs.mkShell {
             shellHook = pkgs.shellhook.ref;
@@ -77,7 +70,7 @@
             packages = with pkgs; [
               renovate
 
-              # uv version
+              # python
               python314
               uv
             ];
@@ -85,29 +78,16 @@
 
           vulnerable = pkgs.mkShell {
             packages = with pkgs; [
-              # python
-              pysentry
-
-              # flake
-              flake-checker
-
-              # actions
-              octoscan
+              pysentry # python
+              flake-checker # flake
+              octoscan # actions
             ];
           };
         };
 
-        checks = pkgs.lib.mkChecks {
+        checks = pkgs.mkChecks {
           python = {
-            src = fs.toSource {
-              root = ./.;
-              fileset = fs.unions [
-                ./uv.lock
-                ./pyproject.toml
-                ./.python-version
-                (fs.fileFilter (file: file.hasExt "py") ./.)
-              ];
-            };
+            src = self.packages.${system}.default;
             deps = with pkgs; [
               ruff
             ];
@@ -117,23 +97,19 @@
           };
 
           nix = {
-            src = fs.toSource {
-              root = ./.;
-              fileset = fs.fileFilter (file: file.hasExt "nix") ./.;
-            };
+            root = ./.;
+            filter = file: file.hasExt "nix";
             deps = with pkgs; [
-              nixfmt-tree
+              nixfmt
             ];
-            script = ''
-              treefmt --ci
+            forEach = ''
+              nixfmt --check "$file"
             '';
           };
 
           renovate = {
-            src = fs.toSource {
-              root = ./.github;
-              fileset = ./.github/renovate.json;
-            };
+            root = ./.github;
+            fileset = ./.github/renovate.json;
             deps = with pkgs; [
               renovate
             ];
@@ -143,54 +119,49 @@
           };
 
           actions = {
-            src = fs.toSource {
-              root = ./.github/workflows;
-              fileset = ./.github/workflows;
-            };
+            root = ./.;
+            fileset = ./.github/workflows;
             deps = with pkgs; [
               action-validator
               octoscan
             ];
-            script = ''
-              action-validator **/*.yaml
-              octoscan scan .
+            forEach = ''
+              action-validator "$file"
+              octoscan scan "$file"
             '';
           };
 
           prettier = {
-            src = fs.toSource {
-              root = ./.;
-              fileset = fs.fileFilter (file: file.hasExt "yaml" || file.hasExt "json" || file.hasExt "md") ./.;
-            };
+            root = ./.;
+            filter = file: file.hasExt "yaml" || file.hasExt "json" || file.hasExt "md";
             deps = with pkgs; [
               prettier
             ];
-            script = ''
-              prettier --check .
+            forEach = ''
+              prettier --check "$file"
             '';
           };
         };
 
-        apps = pkgs.lib.mkApps {
-          dev.script = "uv run qbittorrent-port-glue";
+        apps = pkgs.mkApps {
+          dev = "uv run qbittorrent-port-glue";
         };
 
-        packages = with pkgs.lib; rec {
+        packages = with pkgs.lib; {
           default = pkgs.python314Packages.buildPythonPackage (finalAttrs: {
             pname = "qbittorrent-port-glue";
             version = "0.1.1";
             pyproject = true;
 
-            src = fs.toSource {
+            src = fileset.toSource {
               root = ./.;
-              fileset = fs.difference ./. (
-                fs.unions [
-                  ./.vscode
-                  ./.github/workflows
-                  ./flake.nix
-                  ./flake.lock
-                ]
-              );
+              fileset = fileset.unions [
+                ./.python-version
+                ./pyproject.toml
+                ./uv.lock
+                ./.github/README.md
+                ./src
+              ];
             };
 
             propagatedBuildInputs = with pkgs.python314Packages; [
@@ -198,50 +169,37 @@
               watchfiles
             ];
 
-            build-system = [
-              pkgs.python314Packages.setuptools
-              pkgs.uv-build.python314
+            build-system = with pkgs.python314Packages; [
+              setuptools
+              uv-build.latest
             ];
 
             meta = {
               description = "glues qbittorrent's port to a file";
               mainProgram = "qbittorrent-port-glue";
-              homepage = "https://github.com/spotdemo4/qbittorrent-port-glue";
-              changelog = "https://github.com/spotdemo4/qbittorrent-port-glue/releases/tag/v${finalAttrs.version}";
               license = licenses.mit;
               platforms = platforms.all;
+              homepage = "https://github.com/spotdemo4/qbittorrent-port-glue";
+              changelog = "https://github.com/spotdemo4/qbittorrent-port-glue/releases/tag/v${finalAttrs.version}";
+              downloadPage = "https://github.com/spotdemo4/qbittorrent-port-glue/releases/tag/v${finalAttrs.version}";
             };
           });
+        };
 
-          image = pkgs.dockerTools.buildLayeredImage {
-            name = default.pname;
-            tag = default.version;
-
-            contents = with pkgs; [
-              dockerTools.caCertificates
-            ];
-
-            created = "now";
-            meta = default.meta;
-
-            config = {
-              Entrypoint = [ "${meta.getExe default}" ];
-              Labels = {
-                "org.opencontainers.image.title" = default.pname;
-                "org.opencontainers.image.description" = default.meta.description;
-                "org.opencontainers.image.version" = default.version;
-                "org.opencontainers.image.source" = default.meta.homepage;
-                "org.opencontainers.image.licenses" = default.meta.license.spdxId;
-              };
-            };
+        images = {
+          default = pkgs.mkImage self.packages.${system}.default {
+            contents = with pkgs; [ dockerTools.caCertificates ];
           };
         };
 
-        nixosModules.default = import ./service.nix {
-          qbittorrent-port-glue = packages.default;
+        nixosModules = {
+          default = import ./service.nix {
+            qbittorrent-port-glue = self.packages.${system}.default;
+          };
         };
 
         formatter = pkgs.nixfmt-tree;
+        schemas = trev.schemas;
       }
     );
 }

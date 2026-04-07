@@ -15,10 +15,15 @@ permissions:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image:
+          - ubuntu-24.04
+          - ubuntu-24.04-arm
+    runs-on: ${{ matrix.image }}
     steps:
-      - id: checkout
-        name: Checkout
+      - id: init
+        name: Initialize
         uses: spotdemo4/nix-init@32b128f67703e246a0895d72d65ae455bf38d559 # v1.41.0
         with:
           app_id: ${{ vars.CLIENT_ID }}
@@ -26,11 +31,14 @@ jobs:
           fetch_depth: 0
           shell: release
 
-      - name: Run flake-release
+      - name: Release to GitHub
         run: flake-release
         env:
-          GITHUB_TOKEN: ${{ steps.checkout.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.init.outputs.token }}
           REGISTRY: ghcr.io
           REGISTRY_USERNAME: ${{ github.actor }}
           REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-          BUNDLE: appimage
+          BUNDLE: AppImage
+          PACKAGES: |
+            packages.${{ steps.init.outputs.system }}.default
+            images.${{ steps.init.outputs.system }}.default

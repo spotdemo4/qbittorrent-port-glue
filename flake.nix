@@ -27,11 +27,7 @@
       ...
     }:
     trev.libs.mkFlake (
-      system: init:
-      let
-        pkgs = init.appendOverlays [ trev.overlays.python ];
-      in
-      {
+      system: pkgs: {
         devShells = {
           default = pkgs.mkShell {
             shellHook = pkgs.shellhook.ref;
@@ -49,8 +45,6 @@
 
               # util
               bumper
-              flake-release
-              renovate
             ];
           };
 
@@ -88,7 +82,7 @@
         checks = pkgs.mkChecks {
           python = {
             src = self.packages.${system}.default;
-            deps = with pkgs; [
+            packages = with pkgs; [
               ruff
             ];
             script = ''
@@ -99,10 +93,10 @@
           nix = {
             root = ./.;
             filter = file: file.hasExt "nix";
-            deps = with pkgs; [
+            packages = with pkgs; [
               nixfmt
             ];
-            forEach = ''
+            script = ''
               nixfmt --check "$file"
             '';
           };
@@ -110,7 +104,7 @@
           renovate = {
             root = ./.github;
             fileset = ./.github/renovate.json;
-            deps = with pkgs; [
+            packages = with pkgs; [
               renovate
             ];
             script = ''
@@ -121,11 +115,11 @@
           actions = {
             root = ./.;
             fileset = ./.github/workflows;
-            deps = with pkgs; [
+            packages = with pkgs; [
               action-validator
               octoscan
             ];
-            forEach = ''
+            script = ''
               action-validator "$file"
               octoscan scan "$file"
             '';
@@ -134,10 +128,10 @@
           prettier = {
             root = ./.;
             filter = file: file.hasExt "yaml" || file.hasExt "json" || file.hasExt "md";
-            deps = with pkgs; [
+            packages = with pkgs; [
               prettier
             ];
-            forEach = ''
+            script = ''
               prettier --check "$file"
             '';
           };
@@ -171,12 +165,12 @@
 
             build-system = with pkgs.python314Packages; [
               setuptools
-              uv-build.latest
+              uv-build-latest
             ];
 
             meta = {
-              description = "glues qbittorrent's port to a file";
               mainProgram = "qbittorrent-port-glue";
+              description = "glues qbittorrent's port to a file";
               license = licenses.mit;
               platforms = platforms.all;
               homepage = "https://github.com/spotdemo4/qbittorrent-port-glue";
@@ -187,7 +181,8 @@
         };
 
         images = {
-          default = pkgs.mkImage self.packages.${system}.default {
+          default = pkgs.mkImage {
+            src = self.packages.${system}.default;
             contents = with pkgs; [ dockerTools.caCertificates ];
           };
         };
@@ -199,7 +194,6 @@
         };
 
         formatter = pkgs.nixfmt-tree;
-        schemas = trev.schemas;
       }
     );
 }

@@ -3,18 +3,23 @@ name = "qbittorrent-port-glue"
 version = "0.1.1"
 description = "glues qbittorrent's port to a file"
 readme = ".github/README.md"
-authors = [
-    { name = "spotdemo4", email = "me@trev.xyz" }
-]
+authors = [{ name = "spotdemo4", email = "me@trev.xyz" }]
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.14"
-dependencies = [
-    "qbittorrent-api>=2025.11.1",
-    "watchfiles>=1.1.1",
-]
+dependencies = ["qbittorrent-api>=2025.11.1", "watchfiles>=1.1.1"]
 
 [project.scripts]
 qbittorrent-port-glue = "qbittorrent_port_glue:main"
 
 [build-system]
-requires = ["uv_build>=0.11.0,<0.12.0"]
+requires = ["uv_build>=0.12.0,<0.13.0"]
 build-backend = "uv_build"
+
+[tool.basedpyright]
+include = ["src"]
+typeCheckingMode = "recommended"
+failOnWarnings = true
+
+[dependency-groups]
+dev = ["basedpyright>=1.39.9", "ruff>=0.16.0"]

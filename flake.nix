@@ -13,9 +13,24 @@
   inputs = {
     systems.url = "github:spotdemo4/systems";
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
-    trev = {
-      url = "github:spotdemo4/nur";
+    trevpkgs = {
+      url = "github:spotdemo4/trevpkgs";
       inputs.systems.follows = "systems";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    pyproject-nix = {
+      url = "github:pyproject-nix/pyproject.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    uv2nix = {
+      url = "github:pyproject-nix/uv2nix";
+      inputs.pyproject-nix.follows = "pyproject-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    pyproject-build-systems = {
+      url = "github:pyproject-nix/build-system-pkgs";
+      inputs.pyproject-nix.follows = "pyproject-nix";
+      inputs.uv2nix.follows = "uv2nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -23,27 +38,65 @@
   outputs =
     {
       self,
-      trev,
+      trevpkgs,
+      pyproject-nix,
+      uv2nix,
+      pyproject-build-systems,
       ...
     }:
-    trev.libs.mkFlake (
-      system: pkgs: {
+    let
+      workspace = uv2nix.lib.workspace.loadWorkspace { workspaceRoot = ./.; };
+      pyprojectOverlay = workspace.mkPyprojectOverlay {
+        sourcePreference = "wheel";
+      };
+      editableOverlay = workspace.mkEditablePyprojectOverlay {
+        root = "$REPO_ROOT";
+      };
+    in
+    trevpkgs.libs.mkFlake (
+      system: pkgs:
+      let
+        python = pkgs.python314;
+        pythonSet = (pkgs.callPackage pyproject-nix.build.packages { inherit python; }).overrideScope (
+          pkgs.lib.composeManyExtensions [
+            pyproject-build-systems.overlays.wheel
+            pyprojectOverlay
+          ]
+        );
+        editablePythonSet = pythonSet.overrideScope editableOverlay;
+        developmentVirtualenv = editablePythonSet.mkVirtualEnv "qbittorrent-port-glue-dev-env" workspace.deps.all;
+      in
+      {
         devShells = {
           default = pkgs.mkShell {
-            shellHook = pkgs.shellhook.ref;
+            shellHook = ''
+              ${pkgs.shellhook.ref}
+              unset PYTHONPATH
+              export REPO_ROOT=$(git rev-parse --show-toplevel)
+            '';
+            env = {
+              UV_NO_SYNC = "1";
+              UV_PYTHON = editablePythonSet.python.interpreter;
+              UV_PYTHON_DOWNLOADS = "never";
+              UV_PROJECT_ENVIRONMENT = developmentVirtualenv;
+              VIRTUAL_ENV = developmentVirtualenv;
+            };
             packages = with pkgs; [
               # python
-              python314
+              developmentVirtualenv
               uv
 
-              # lint
-              ruff
+              vscode-json-languageserver # json
+              yaml-language-server # yaml
+              tombi # toml
+              oxfmt # format
 
-              # format
+              # nix
+              nixd
               nixfmt
-              prettier
 
               # util
+              treefmt
               bumper
             ];
           };
@@ -57,6 +110,10 @@
           release = pkgs.mkShell {
             packages = with pkgs; [
               flake-release
+
+              # python
+              python
+              uv
             ];
           };
 
@@ -65,7 +122,7 @@
               renovate
 
               # python
-              python314
+              python
               uv
             ];
           };
@@ -73,20 +130,74 @@
           vulnerable = pkgs.mkShell {
             packages = with pkgs; [
               pysentry # python
-              flake-checker # flake
-              octoscan # actions
+              flake-checker # nix
+              zizmor # actions
             ];
           };
         };
 
-        checks = pkgs.mkChecks {
-          python = {
-            src = self.packages.${system}.default;
-            packages = with pkgs; [
-              ruff
+        packages =
+          let
+            inherit (pkgs.callPackages pyproject-nix.build.util { }) mkApplication;
+          in
+          {
+            default =
+              (mkApplication {
+                venv = pythonSet.mkVirtualEnv "qbittorrent-port-glue-env" workspace.deps.default;
+                package = pythonSet.qbittorrent-port-glue;
+              }).overrideAttrs
+                (old: {
+                  meta = (old.meta or { }) // {
+                    mainProgram = "qbittorrent-port-glue";
+                    description = "glues qbittorrent's port to a file";
+                    license = pkgs.lib.licenses.mit;
+                    platforms = pkgs.lib.platforms.all;
+                    homepage = "https://github.com/spotdemo4/qbittorrent-port-glue";
+                    changelog = "https://github.com/spotdemo4/qbittorrent-port-glue/releases";
+                    downloadPage = "https://github.com/spotdemo4/qbittorrent-port-glue/releases/tag/v${pythonSet.qbittorrent-port-glue.version}";
+                  };
+                });
+          };
+
+        images.default = pkgs.mkImage {
+          src = self.packages.${system}.default;
+          contents = with pkgs; [ dockerTools.caCertificates ];
+        };
+
+        nixosModules.default =
+          { pkgs, ... }:
+          {
+            imports = [
+              (import ./service.nix {
+                qbittorrent-port-glue = self.packages.${pkgs.stdenv.hostPlatform.system}.default;
+              })
             ];
+          };
+
+        formatter = pkgs.treefmt.withConfig {
+          configFile = ./treefmt.toml;
+          runtimeInputs = with pkgs; [
+            developmentVirtualenv
+            oxfmt
+            nixfmt
+          ];
+        };
+
+        checks = pkgs.mkChecks {
+          package = self.packages.${system}.default;
+
+          python = {
+            root = ./.;
+            filter = file: file.hasExt "py";
+            include = [
+              ./.python-version
+              ./pyproject.toml
+              ./uv.lock
+            ];
+            packages = [ developmentVirtualenv ];
             script = ''
               ruff check
+              basedpyright
             '';
           };
 
@@ -101,9 +212,22 @@
             '';
           };
 
-          renovate = {
+          actions-gh = {
+            root = ./.github/workflows;
+            filter = file: file.hasExt "yaml";
+            packages = with pkgs; [
+              action-validator
+              zizmor
+            ];
+            script = ''
+              action-validator "$file"
+              zizmor --offline "$file"
+            '';
+          };
+
+          renovate-gh = {
             root = ./.github;
-            fileset = ./.github/renovate.json;
+            files = ./.github/renovate.json;
             packages = with pkgs; [
               renovate
             ];
@@ -112,88 +236,17 @@
             '';
           };
 
-          actions = {
+          config = {
             root = ./.;
-            fileset = ./.github/workflows;
+            filter = file: file.hasExt "json" || file.hasExt "yaml" || file.hasExt "toml" || file.hasExt "md";
             packages = with pkgs; [
-              action-validator
-              octoscan
+              oxfmt
             ];
             script = ''
-              action-validator "$file"
-              octoscan scan "$file"
-            '';
-          };
-
-          prettier = {
-            root = ./.;
-            filter = file: file.hasExt "yaml" || file.hasExt "json" || file.hasExt "md";
-            packages = with pkgs; [
-              prettier
-            ];
-            script = ''
-              prettier --check "$file"
+              oxfmt --check
             '';
           };
         };
-
-        apps = pkgs.mkApps {
-          dev = "uv run qbittorrent-port-glue";
-        };
-
-        packages = with pkgs.lib; {
-          default = pkgs.python314Packages.buildPythonPackage (finalAttrs: {
-            pname = "qbittorrent-port-glue";
-            version = "0.1.1";
-            pyproject = true;
-
-            src = fileset.toSource {
-              root = ./.;
-              fileset = fileset.unions [
-                ./.python-version
-                ./pyproject.toml
-                ./uv.lock
-                ./.github/README.md
-                ./src
-              ];
-            };
-
-            propagatedBuildInputs = with pkgs.python314Packages; [
-              qbittorrent-api
-              watchfiles
-            ];
-
-            build-system = with pkgs.python314Packages; [
-              setuptools
-              uv-build-latest
-            ];
-
-            meta = {
-              mainProgram = "qbittorrent-port-glue";
-              description = "glues qbittorrent's port to a file";
-              license = licenses.mit;
-              platforms = platforms.all;
-              homepage = "https://github.com/spotdemo4/qbittorrent-port-glue";
-              changelog = "https://github.com/spotdemo4/qbittorrent-port-glue/releases/tag/v${finalAttrs.version}";
-              downloadPage = "https://github.com/spotdemo4/qbittorrent-port-glue/releases/tag/v${finalAttrs.version}";
-            };
-          });
-        };
-
-        images = {
-          default = pkgs.mkImage {
-            src = self.packages.${system}.default;
-            contents = with pkgs; [ dockerTools.caCertificates ];
-          };
-        };
-
-        nixosModules = {
-          default = import ./service.nix {
-            qbittorrent-port-glue = self.packages.${system}.default;
-          };
-        };
-
-        formatter = pkgs.nixfmt-tree;
       }
     );
 }

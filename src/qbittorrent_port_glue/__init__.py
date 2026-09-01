@@ -1,42 +1,56 @@
-from .qbittorrent import qBittorrent, ConnectionStatus
-from os import environ
-from watchfiles import watch, Change
-from pathlib import Path
 import logging
 import signal
-import threading
 import sys
+import threading
+from os import environ
+from pathlib import Path
+from types import FrameType
+
+from watchfiles import Change, watch
+
+from .qbittorrent import ConnectionStatus, qBittorrent
+
+LOG_LEVELS = {
+    "CRITICAL": logging.CRITICAL,
+    "FATAL": logging.FATAL,
+    "ERROR": logging.ERROR,
+    "WARNING": logging.WARNING,
+    "WARN": logging.WARNING,
+    "INFO": logging.INFO,
+    "DEBUG": logging.DEBUG,
+    "NOTSET": logging.NOTSET,
+}
 
 logging.basicConfig(
-    level=logging.getLevelName(environ.get("LOG_LEVEL", "INFO").upper()),
+    level=LOG_LEVELS[environ.get("LOG_LEVEL", "INFO").upper()],
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
-done_event = threading.Event()
+log = logging.getLogger(__name__)
 
 
 # watch port file for changes
 def watch_file(qb: qBittorrent, file: Path, done_event: threading.Event) -> None:
-    logging.info(f"Watching file {file} for changes")
+    log.info(f"Watching file {file} for changes")
 
     for changes in watch(file, stop_event=done_event):
-        logging.debug("File changed!")
+        log.debug("File changed!")
 
         # skip checking if connected or offline
         qb_connected = qb.get_connection_status()
         if qb_connected == ConnectionStatus.CONNECTED:
-            logging.debug("qBittorrent is connected")
+            log.debug("qBittorrent is connected")
             continue
 
         if qb_connected == ConnectionStatus.OFFLINE:
-            logging.debug("qBittorrent is offline")
+            log.debug("qBittorrent is offline")
             continue
 
         for change in changes:
-            (change_type, path) = change
+            (change_type, _path) = change
 
             # ignore deleted file, wait for next change
             if change_type == Change.deleted:
-                logging.warning("Port file deleted!")
+                log.warning("Port file deleted!")
                 continue
 
             # get port from file
@@ -47,27 +61,27 @@ def watch_file(qb: qBittorrent, file: Path, done_event: threading.Event) -> None
 
             # update qBittorrent if different
             if qb_port == file_port:
-                logging.debug(f"Both qBittorrent and file using port {qb_port}")
+                log.debug(f"Both qBittorrent and file using port {qb_port}")
             else:
-                logging.info(f"Updating port ({qb_port} -> {file_port})")
+                log.info(f"Updating port ({qb_port} -> {file_port})")
                 qb.set_port(file_port)
 
 
 # periodically check file for changes
 def timer_qbit(qb: qBittorrent, file: Path, done_event: threading.Event) -> None:
     while not done_event.is_set():
-        logging.debug("Checking qBittorrent connection")
+        log.debug("Checking qBittorrent connection")
 
         # skip checking if connected or offline
         qb_connected = qb.get_connection_status()
         if qb_connected == ConnectionStatus.CONNECTED:
-            logging.debug("qBittorrent is connected")
-            done_event.wait(timeout=30)
+            log.debug("qBittorrent is connected")
+            _ = done_event.wait(timeout=30)
             continue
 
         if qb_connected == ConnectionStatus.OFFLINE:
-            logging.debug("qBittorrent is offline")
-            done_event.wait(timeout=30)
+            log.debug("qBittorrent is offline")
+            _ = done_event.wait(timeout=30)
             continue
 
         # get port from file
@@ -78,12 +92,12 @@ def timer_qbit(qb: qBittorrent, file: Path, done_event: threading.Event) -> None
 
         # update qBittorrent if different
         if qb_port == file_port:
-            logging.debug(f"Both qBittorrent and file using port {qb_port}")
+            log.debug(f"Both qBittorrent and file using port {qb_port}")
         else:
-            logging.info(f"Updating port ({qb_port} -> {file_port})")
+            log.info(f"Updating port ({qb_port} -> {file_port})")
             qb.set_port(file_port)
 
-        done_event.wait(timeout=30)
+        _ = done_event.wait(timeout=30)
 
 
 def main() -> None:
@@ -91,12 +105,17 @@ def main() -> None:
     done_event = threading.Event()
 
     # validate PORT_FILE
-    file = Path(environ.get("PORT_FILE"))
+    port_file = environ.get("PORT_FILE")
+    if port_file is None:
+        log.error("PORT_FILE is not set!")
+        sys.exit(1)
+
+    file = Path(port_file)
     if not file.exists():
-        logging.error(f"File {file} does not exist!")
+        log.error(f"File {file} does not exist!")
         sys.exit(1)
     if not file.is_file():
-        logging.error(f"{file} is not a file!")
+        log.error(f"{file} is not a file!")
         sys.exit(1)
 
     file_thread = threading.Thread(
@@ -117,11 +136,11 @@ def main() -> None:
         ),
     )
 
-    def shutdown(signum, frame):
-        logging.info("Shutting down")
+    def shutdown(_signum: int, _frame: FrameType | None) -> None:
+        log.info("Shutting down")
         done_event.set()
 
-    signal.signal(signal.SIGINT, shutdown)
+    _ = signal.signal(signal.SIGINT, shutdown)
 
     file_thread.start()
     qbit_thread.start()

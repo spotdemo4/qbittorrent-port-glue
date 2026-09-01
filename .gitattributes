@@ -1,0 +1,28 @@
+# Python template - Git attributes
+# https://git-scm.com/docs/gitattributes
+
+# Linguist: Python lock files are generated
+flake.lock linguist-generated=true
+uv.lock linguist-generated=true
+poetry.lock linguist-generated=true
+
+# Python source files use Python diff driver
+*.py text diff=python linguist-language=Python
+*.pyi text diff=python
+*.pyx text diff=python
+
+# Normalize line endings to LF and auto-detect text files
+* text=auto eol=lf
+
+# Shell scripts must use LF
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Windows batch files require CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Do not normalize patch/diff files
+*.diff -text
+*.patch -text

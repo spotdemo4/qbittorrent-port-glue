@@ -7,22 +7,27 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
-  python:
-    runs-on: ubuntu-latest
+  actions:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Initialize
         uses: spotdemo4/nix-init@c7537bc73ce11ca01e53bd9d119d6e46363f9888 # v1.65.0
         with:
           shell: vulnerable
 
-      - name: Run pysentry
-        run: pysentry
+      - name: Run zizmor
+        run: zizmor $(find .github/workflows -name "*.yaml")
 
-  flake:
-    runs-on: ubuntu-latest
+  nix:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Initialize
         uses: spotdemo4/nix-init@c7537bc73ce11ca01e53bd9d119d6e46363f9888 # v1.65.0
@@ -32,13 +37,16 @@ jobs:
       - name: Run flake-checker
         run: flake-checker -f
 
-  actions:
-    runs-on: ubuntu-latest
+  python:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Initialize
         uses: spotdemo4/nix-init@c7537bc73ce11ca01e53bd9d119d6e46363f9888 # v1.65.0
         with:
           shell: vulnerable
 
-      - name: Run octoscan
-        run: octoscan scan .github
+      - name: Run pysentry
+        run: pysentry

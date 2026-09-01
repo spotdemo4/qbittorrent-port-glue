@@ -2,12 +2,17 @@
 /.envrc
 /docker-compose*
 
+# agents
+.agents/
+.claude/
+.codex/
+
+# nix
+/result*
+/.direnv/
+
 # python
 /.venv
 /dist
 /.ruff_cache
 __pycache__
-
-# nix
-/result*
-/.direnv/

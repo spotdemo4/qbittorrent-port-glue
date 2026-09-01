@@ -10,8 +10,6 @@ concurrency:
 
 permissions:
   contents: read
-  id-token: write
-  packages: write
 
 jobs:
   release:
@@ -21,6 +19,10 @@ jobs:
           - ubuntu-24.04
           - ubuntu-24.04-arm
     runs-on: ${{ matrix.image }}
+    permissions:
+      id-token: write
+      contents: write
+      packages: write
     steps:
       - id: init
         name: Initialize

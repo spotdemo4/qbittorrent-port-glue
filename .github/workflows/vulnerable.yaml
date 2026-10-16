@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   actions:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       id-token: write
@@ -24,7 +24,7 @@ jobs:
         run: zizmor $(find .github/workflows -name "*.yaml")
 
   nix:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       id-token: write
@@ -38,7 +38,7 @@ jobs:
         run: flake-checker -f
 
   python:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       id-token: write
